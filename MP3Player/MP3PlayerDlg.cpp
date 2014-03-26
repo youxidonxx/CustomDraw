@@ -242,6 +242,8 @@ void CMP3PlayerDlg::OnPaint()
 	}
 	else
 	{
+		CPaintDC	dc(this);
+		DrawBKBmp(&dc,m_rtWnd);
 		CDialogEx::OnPaint();
 	}
 }
@@ -408,37 +410,39 @@ void	CMP3PlayerDlg::DrawNC(CDC* pDC)
 		TRACE2("m_rtWnd::left == %d,right == %d\n",m_rtWnd.left,m_rtWnd.right);
 		TRACE2("m_rtWnd::top == %d,bottom == %d\n",m_rtWnd.top,m_rtWnd.bottom);
 		//////////////////////////////////////////////////////////////////
-// 		if (m_bNCActive)
+ 		int  cx   =   GetSystemMetrics(   SM_CXSCREEN   );   
+		int  cy   =   GetSystemMetrics(   SM_CYSCREEN   );
+		TRACE2("Screen::cx == %d,cy == %d\n",cx,cy);
+
+// 		CDC	dcTmp;
+// 		dcTmp.CreateCompatibleDC(pDC);
+// 		if (m_bmpCP.GetSafeHandle())
 // 		{
-// 
-// 		}
-		CDC	dcTmp;
-		dcTmp.CreateCompatibleDC(pDC);
-		if (m_bmpCP.GetSafeHandle())
-		{
-			CBitmap *pOldBitmap=dcTmp.SelectObject(&m_bmpCP);
-			BITMAP	bm;
-			m_bmpGK.GetBitmap(&bm);
-			pDC->StretchBlt(
-//				0,0,
-				rcTitle.left,rcTitle.top,
-				m_rtWnd.Width()+1250,
-				rcTitle.Height()+150,
-// 				400,200,
-				&dcTmp,
-				0,0,
-				bm.bmWidth,
-				bm.bmHeight,
-				SRCCOPY);
-// 			pDC->BitBlt(rcTitle.left,rcTitle.top,rcTitle.Width(),rcTitle.Height(),&dcTmp,0,0,SRCCOPY);
-			dcTmp.SelectObject(pOldBitmap);
-			pOldBitmap->DeleteObject();
-			TRACE2("rcTitle::width == %d,height == %d\n",rcTitle.Width(),rcTitle.Height());
-			TRACE2("bm::width == %d,height == %d\n",bm.bmWidth,bm.bmHeight);
-		} 
-// 		DrawTitle(pDC,rcTitle);
+// 			CBitmap *pOldBitmap=dcTmp.SelectObject(&m_bmpCP);
+// 			BITMAP	bm;
+// 			m_bmpGK.GetBitmap(&bm);
+// 			TRACE0("*************************************************************************\n");
+// 			TRACE2("rcTitle::width == %d,height == %d\n",rcTitle.Width(),rcTitle.Height());
+// 			TRACE2("bm::width == %d,height == %d\n",bm.bmWidth,bm.bmHeight);
+// 			pDC->SetStretchBltMode(HALFTONE);
+// 			pDC->StretchBlt(
+// //				0,0,
+// 				rcTitle.left,rcTitle.top,
+// 				m_rtWnd.Width(),
+// 				rcTitle.Height(),
+// // 				400,200,
+// 				&dcTmp,
+// 				0,0,
+// 				bm.bmWidth,
+// 				bm.bmHeight,
+// 				SRCCOPY);
+// // 			pDC->BitBlt(rcTitle.left,rcTitle.top,rcTitle.Width(),rcTitle.Height(),&dcTmp,0,0,SRCCOPY);
+// 			dcTmp.SelectObject(pOldBitmap);
+// 			pOldBitmap->DeleteObject();
+// 		} 
+  		DrawTitle(pDC,rcTitle);
 		DrawBorder(pDC,m_rtWnd);
-	}
+ 	}
 }
 void	CMP3PlayerDlg::DrawBorder(CDC* pDC,CRect rcWnd)
 {
@@ -470,7 +474,8 @@ void	CMP3PlayerDlg::DrawTitle(CDC* pDC,CRect	rcTitle)
 			CBitmap *pOldBitmap=dcTmp.SelectObject(&m_bmpCP);
 			BITMAP	bm;
 			m_bmpGK.GetBitmap(&bm);
- 			pDC->StretchBlt(
+			int nOldMode = pDC->SetStretchBltMode(HALFTONE);
+			pDC->StretchBlt(
  				0,0,
 //				rcTitle.left,rcTitle.top,
 				rcTitle.Width(),
@@ -484,7 +489,21 @@ void	CMP3PlayerDlg::DrawTitle(CDC* pDC,CRect	rcTitle)
 ////			pDC->BitBlt(rcTitle.left,rcTitle.top,rcTitle.Width(),rcTitle.Height(),&dcTmp,0,0,SRCCOPY);
 			dcTmp.SelectObject(pOldBitmap);
 			pOldBitmap->DeleteObject();
+			pDC->SetStretchBltMode(nOldMode);
 			TRACE2("rcTitle::width == %d,height == %d\n",rcTitle.Width(),rcTitle.Height());
 			TRACE2("bm::width == %d,height == %d\n",bm.bmWidth,bm.bmHeight);
 		} 
+}
+void	CMP3PlayerDlg::DrawBKBmp(CDC* pDC,CRect rcWnd)
+{
+	if (m_bmpGK.GetSafeHandle()!=INVALID_HANDLE_VALUE)
+	{
+		CDC	dcTmp;
+		dcTmp.CreateCompatibleDC(pDC);
+		BITMAP	bmpBK;
+		m_bmpGK.GetBitmap(&bmpBK);
+		CBitmap*	pOldBmp = dcTmp.SelectObject(&m_bmpGK);
+		pDC->StretchBlt(0,0,rcWnd.Width(),rcWnd.Height(),&dcTmp,
+			0,0,bmpBK.bmWidth,bmpBK.bmHeight,SRCCOPY);
+	}
 }

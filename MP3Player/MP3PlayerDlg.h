@@ -69,7 +69,7 @@ protected:
 	CBrush m_brBG;			//对话框背景颜色,在OnInitDialog 中初始化,在OnCtlColor中作为返回值.
 	CString m_strCaption;	//标题.
 	CRect m_rtWnd;			//整个窗体Rect.
-	CBitmap	m_bmpGK			//背景图片
+	CBitmap	m_bmpGK			//背景图片——需要在OnPaint中绘画，否则不起作用
 		,m_bmpCP			//标题栏
 		;
 
@@ -92,6 +92,7 @@ protected:
 	void DrawNC(CDC* pDC);	//	画非客户区 
 	void	DrawTitle(CDC*	pDC,CRect	rcTitle);
 	void	DrawBorder(CDC*	pDC,CRect	rcWnd);
+	void	DrawBKBmp(CDC*	pDC,CRect	rcWnd);
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
