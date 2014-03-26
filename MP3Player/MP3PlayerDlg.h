@@ -91,6 +91,7 @@ protected:
 
 	void DrawNC(CDC* pDC);	//	画非客户区 
 	void	DrawTitle(CDC*	pDC,CRect	rcTitle);
+	void	DrawBorder(CDC*	pDC,CRect	rcWnd);
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);

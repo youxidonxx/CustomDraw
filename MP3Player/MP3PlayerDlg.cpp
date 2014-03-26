@@ -290,7 +290,8 @@ void CMP3PlayerDlg::OnNcCalcSize(BOOL bCalcValidRects, NCCALCSIZE_PARAMS* lpncsp
 {
 	// TODO: Add your message handler code here and/or call default
 
-	lpncsp->rgrc[0].top+=m_nCaptionHeight-GetSystemMetrics(SM_CYCAPTION);
+	int nCY = GetSystemMetrics(SM_CYCAPTION);
+	lpncsp->rgrc[0].top+=m_nCaptionHeight-nCY;
 	CDialogEx::OnNcCalcSize(bCalcValidRects, lpncsp);
 }
 
@@ -395,19 +396,69 @@ void	CMP3PlayerDlg::DrawNC(CDC* pDC)
 {
 	if (pDC)
 	{
-		GetWindowRect(&m_rtWnd);
+		GetWindowRect(m_rtWnd);
+		ScreenToClient(m_rtWnd);
+		m_rtWnd.OffsetRect(-m_rtWnd.left,-m_rtWnd.top);
 		CRect	rcTitle;
 		//绘制标题栏的大小
-		rcTitle.left = 0;
-		rcTitle.top = 0;
+		rcTitle.left = 0;//m_rtWnd.left;
+		rcTitle.top = 0;//m_rtWnd.top;
 		rcTitle.right = m_rtWnd.Width()+ 3;
-		rcTitle.bottom = rcTitle.top + m_nCaptionHeight + 4;
+		rcTitle.bottom = rcTitle.top + m_nCaptionHeight+4 ;
+		TRACE2("m_rtWnd::left == %d,right == %d\n",m_rtWnd.left,m_rtWnd.right);
+		TRACE2("m_rtWnd::top == %d,bottom == %d\n",m_rtWnd.top,m_rtWnd.bottom);
 		//////////////////////////////////////////////////////////////////
 // 		if (m_bNCActive)
 // 		{
 // 
 // 		}
-		DrawTitle(pDC,rcTitle);
+		CDC	dcTmp;
+		dcTmp.CreateCompatibleDC(pDC);
+		if (m_bmpCP.GetSafeHandle())
+		{
+			CBitmap *pOldBitmap=dcTmp.SelectObject(&m_bmpCP);
+			BITMAP	bm;
+			m_bmpGK.GetBitmap(&bm);
+			pDC->StretchBlt(
+//				0,0,
+				rcTitle.left,rcTitle.top,
+				m_rtWnd.Width()+1250,
+				rcTitle.Height()+150,
+// 				400,200,
+				&dcTmp,
+				0,0,
+				bm.bmWidth,
+				bm.bmHeight,
+				SRCCOPY);
+// 			pDC->BitBlt(rcTitle.left,rcTitle.top,rcTitle.Width(),rcTitle.Height(),&dcTmp,0,0,SRCCOPY);
+			dcTmp.SelectObject(pOldBitmap);
+			pOldBitmap->DeleteObject();
+			TRACE2("rcTitle::width == %d,height == %d\n",rcTitle.Width(),rcTitle.Height());
+			TRACE2("bm::width == %d,height == %d\n",bm.bmWidth,bm.bmHeight);
+		} 
+// 		DrawTitle(pDC,rcTitle);
+		DrawBorder(pDC,m_rtWnd);
+	}
+}
+void	CMP3PlayerDlg::DrawBorder(CDC* pDC,CRect rcWnd)
+{
+	if (pDC->GetSafeHdc()!=INVALID_HANDLE_VALUE)
+	{
+		CPen	penBorder(PS_SOLID,1,RGB(100,20,50));
+		CPen*	pOldpen = pDC->SelectObject(&penBorder);
+		for (int i = 0;i<4;i++)
+		{
+			//左边框
+			pDC->MoveTo(rcWnd.left+i,rcWnd.top + 14);
+			pDC->LineTo(rcWnd.left+i,rcWnd.bottom);
+			//下边框
+			pDC->MoveTo(rcWnd.left,rcWnd.bottom-i);
+			pDC->LineTo(rcWnd.right,rcWnd.bottom-i);
+			//右边框
+			pDC->MoveTo(rcWnd.right-i,rcWnd.top + 14);
+			pDC->LineTo(rcWnd.right-i,rcWnd.bottom+14);
+		}
+		pDC->SelectObject(pOldpen);
 	}
 }
 void	CMP3PlayerDlg::DrawTitle(CDC* pDC,CRect	rcTitle)
@@ -419,11 +470,21 @@ void	CMP3PlayerDlg::DrawTitle(CDC* pDC,CRect	rcTitle)
 			CBitmap *pOldBitmap=dcTmp.SelectObject(&m_bmpCP);
 			BITMAP	bm;
 			m_bmpGK.GetBitmap(&bm);
-// 			pDC->StretchBlt(rcTitle.left,rcTitle.top,rcTitle.Width(),rcTitle.Height(),&dcTmp,
-// 				0,0,bm.bmWidth,bm.bmHeight,SRCCOPY);
-			pDC->BitBlt(rcTitle.left,rcTitle.top,rcTitle.Width(),rcTitle.Height(),&dcTmp,0,0,SRCCOPY);
+ 			pDC->StretchBlt(
+ 				0,0,
+//				rcTitle.left,rcTitle.top,
+				rcTitle.Width(),
+				rcTitle.Height(),
+// 				400,200,
+				&dcTmp,
+ 				0,0,
+				bm.bmWidth,
+				bm.bmHeight,
+				SRCCOPY);
+////			pDC->BitBlt(rcTitle.left,rcTitle.top,rcTitle.Width(),rcTitle.Height(),&dcTmp,0,0,SRCCOPY);
 			dcTmp.SelectObject(pOldBitmap);
 			pOldBitmap->DeleteObject();
-		}
-	 
+			TRACE2("rcTitle::width == %d,height == %d\n",rcTitle.Width(),rcTitle.Height());
+			TRACE2("bm::width == %d,height == %d\n",bm.bmWidth,bm.bmHeight);
+		} 
 }
