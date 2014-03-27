@@ -491,15 +491,31 @@ void	CMP3PlayerDlg::DrawTitle(CDC* pDC,CRect	rcTitle)
 			pDC->SetStretchBltMode(nOldMode);
 
 		} 
+		//首先查看是否有icon显示
+		if (m_hIcon)
+		{
+			ICONINFO	icc;
+			GetIconInfo(m_hIcon,&icc);
+			rcTitle.left = rcTitle.left + INIT_CAPTION_OFFSET;
+			rcTitle.top = rcTitle.top + INIT_CAPTION_OFFSET/2;
+			rcTitle.right = rcTitle.left + icc.xHotspot;
+			rcTitle.bottom = rcTitle.top + icc.yHotspot;
+			pDC->DrawIcon(rcTitle.left,rcTitle.top,m_hIcon);
+			//若是有icon，则将坐标右移一段，以方便下一步标题文字坐标确定
+			rcTitle.left += INIT_SYSTEM_MENU_SIZE;
+		}
 		//标题文字
 		CString	str;
 		GetWindowText(str);
 		if (!str.IsEmpty())
 		{
+			CSize	szText = pDC->GetTextExtent(str);
+// 			rcTitle.left += INIT_SYSTEM_MENU_SIZE;
+			rcTitle.right =  rcTitle.left + szText.cx;
 			CFont*	pOld = GetFont();
 			pDC->SetTextColor(RGB(0,0,255));
-			dcTmp.SelectObject(pOld);
-			dcTmp.DrawText(str,&rcTitle,DT_SINGLELINE|DT_LEFT);
+			pDC->SelectObject(pOld);
+			pDC->DrawText(str,&rcTitle,DT_SINGLELINE|DT_LEFT);
 		}
 }
 void	CMP3PlayerDlg::DrawSysMenu(CDC* pDC)
