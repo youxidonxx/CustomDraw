@@ -29,17 +29,25 @@
 //
 
 #pragma once
+#include "SysBtn.h"
 
 
 //部分初始量常量设置
-#define		INIT_CAPTION_HEIGHT		10		//标题栏高度
+#define		INIT_CAPTION_HEIGHT		20		//标题栏高度
+#define		INIT_CAPTION_OFFSET		4		//偏移量
 
-#define		DLG_BUTTON_MIN			_T("//sys_dlg_min.bmp")
-#define		DLG_BUTTON_MAX			_T("//sys_dlg_max.bmp")
-#define		DLG_BUTTON_RES			_T("//sys_dlg_restore.bmp")
-#define		DLG_BUTTON_MENU			_T("//sys_dlg_menu.bmp")
-#define		DLG_BK					_T("//dlg_bk.bmp")
-#define		DLG_TITLE				_T("//dlg_title.bmp")
+#define		INIT_SYSTEM_MENU_SIZE	24		//自绘的最大最小化按钮的大小
+
+
+#define		BTN_MIN_ID			1001
+
+#define		DLG_BUTTON_CLOSE			_T("\\sys_dlg_close.bmp")
+#define		DLG_BUTTON_MIN			_T("\\sys_dlg_min.bmp")
+#define		DLG_BUTTON_MAX			_T("\\sys_dlg_max.bmp")
+#define		DLG_BUTTON_RES			_T("\\sys_dlg_restore.bmp")
+#define		DLG_BUTTON_MENU			_T("\\sys_dlg_menu.bmp")
+#define		DLG_BK					_T("\\dlg_bk.bmp")
+#define		DLG_TITLE				_T("\\dlg_title.bmp")
 
 /************************************************************************/
 /* 
@@ -63,14 +71,17 @@ public:
 	//若是有设置，则说明需要设置背景图片；若是标题路径为无，则表示标题部分不用另外贴图，采用一体背景图
 	void	SetBkImage(const	CString&	strFileBK,const	CString&	strFileCaption);	
 	void	SetBkImage(UINT	nResID_BK,UINT	nResID_CP = 0);	
+	void	SetSysMenu();
 // Implementation
 protected:
 	HICON m_hIcon;
 	CBrush m_brBG;			//对话框背景颜色,在OnInitDialog 中初始化,在OnCtlColor中作为返回值.
 	CString m_strCaption;	//标题.
 	CRect m_rtWnd;			//整个窗体Rect.
+	CString	m_strPath;
 	CBitmap	m_bmpGK			//背景图片——需要在OnPaint中绘画，否则不起作用
 		,m_bmpCP			//标题栏
+		,m_bmpMenu
 		;
 
 	UINT	m_nCaptionHeight		//标题栏高度	——相应的，也有函数进行设置
@@ -87,12 +98,20 @@ protected:
 	CRect m_rtButtExitM;
 	CRect m_bmRt;//Bitmap所在的Rect.
 	BOOL    m_bNCActive;//窗体活动.
+	CRect	m_rtButtMenu;	// 设置
 
+	CSysBtn	m_btnMin
+		,m_btnMax
+		,m_btnExit
+		,m_btnRes
+		;
 
 	void DrawNC(CDC* pDC);	//	画非客户区 
 	void	DrawTitle(CDC*	pDC,CRect	rcTitle);
 	void	DrawBorder(CDC*	pDC,CRect	rcWnd);
 	void	DrawBKBmp(CDC*	pDC,CRect	rcWnd);
+	void	DrawSysMenu(CDC*	pDC);
+	void	DrawMenuBtn(CDC*	pDC,CRect	rcBtn,CString	strFile);
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
@@ -109,4 +128,4 @@ public:
 	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
 	afx_msg void OnInitMenuPopup(CMenu* pPopupMenu, UINT nIndex, BOOL bSysMenu);
 	afx_msg LRESULT OnNcHitTest(CPoint point);
-};
+ };

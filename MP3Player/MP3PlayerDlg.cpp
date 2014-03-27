@@ -106,10 +106,35 @@ BEGIN_MESSAGE_MAP(CMP3PlayerDlg, CDialogEx)
 	ON_WM_NCMOUSEMOVE()
 	ON_WM_INITMENUPOPUP()
 	ON_WM_NCHITTEST()
-END_MESSAGE_MAP()
+ END_MESSAGE_MAP()
 
 
 //////////////////////////////////////////////////////////////////////////
+ void	CMP3PlayerDlg::SetSysMenu()
+ {
+	 CRect	rcDlg;
+	 rcDlg = m_rtWnd;
+	 CRect	rcBtn;
+	 rcBtn.left=  rcDlg.right - INIT_SYSTEM_MENU_SIZE -INIT_CAPTION_OFFSET;
+	 rcBtn.top =  rcDlg.top +INIT_CAPTION_OFFSET/2;
+	 rcBtn.right = rcBtn.left + INIT_SYSTEM_MENU_SIZE;
+	 rcBtn.bottom = rcBtn.top+m_nCaptionHeight;
+ 	 m_rtButtExit = rcBtn;
+
+	 rcBtn.left = rcBtn.left - INIT_SYSTEM_MENU_SIZE -1;
+	 rcBtn.right = rcBtn.left + INIT_SYSTEM_MENU_SIZE;
+
+	 m_rtButtMin = rcBtn;
+
+	 rcBtn.left = rcBtn.left - INIT_SYSTEM_MENU_SIZE -1;
+	 rcBtn.right = rcBtn.left + INIT_SYSTEM_MENU_SIZE;
+
+	 m_rtButtMax = rcBtn;
+
+	 rcBtn.left = rcBtn.left - INIT_SYSTEM_MENU_SIZE -1;
+	 rcBtn.right = rcBtn.left + INIT_SYSTEM_MENU_SIZE;
+	 m_rtButtMenu = rcBtn;
+  }
 void	CMP3PlayerDlg::SetBkImage(const CString& strFileBK,const CString& strFileCaption)
 {
 	//若是标题栏图片路径无，则表示采用一体背景
@@ -192,14 +217,18 @@ BOOL CMP3PlayerDlg::OnInitDialog()
 	// TODO: Add extra initialization here
 	m_bNCActive=true;//初始NC区为活动.
 	m_brBG.CreateSolidBrush(RGB(0, 0, 0)); //对话框背景颜色,在OnCtlColor中作为返回值.
+
+	GetWindowRect(m_rtWnd);
 	CString	str;
 	TCHAR	path[MAX_PATH];
 	GetPath(path);
 	str=path;
 	if (!str.IsEmpty())
 	{
-		str +=_T("//skin");
+		str +=_T("\\skin");
 		SetBkImage(str+DLG_BK,str+DLG_TITLE);
+		m_strPath = str;
+		SetSysMenu();
 	}
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -243,7 +272,7 @@ void CMP3PlayerDlg::OnPaint()
 	else
 	{
 		CPaintDC	dc(this);
-		DrawBKBmp(&dc,m_rtWnd);
+  		DrawBKBmp(&dc,m_rtWnd);
 		CDialogEx::OnPaint();
 	}
 }
@@ -377,9 +406,13 @@ LRESULT CMP3PlayerDlg::OnNcHitTest(CPoint point)
 {
 	// TODO: Add your message handler code here and/or call default
 
-	CRect tst(2,2,m_nCaptionHeight+4,m_nCaptionHeight+4);
-	tst.OffsetRect(m_rtWnd.TopLeft());//原图标屏幕位置
-	if(tst.PtInRect(point))//最大最小关闭按钮位置.
+	CRect tst(2,2,m_nCaptionHeight+INIT_CAPTION_OFFSET,m_nCaptionHeight+INIT_CAPTION_OFFSET);
+// 	tst.OffsetRect(m_rtWnd.TopLeft());//原图标屏幕位置
+	ScreenToClient(&point);
+  	point.Offset(CSize(INIT_CAPTION_OFFSET,(m_nCaptionHeight+INIT_CAPTION_OFFSET)));
+	//x需要偏移(-4,-24)
+ 	TRACE2("OnHitTest::x == %d,y == %d\n",point.x,point.y);
+ 	if(tst.PtInRect(point))//最大最小关闭按钮位置.
 		return HTCAPTION;
 	else if(m_rtButtMin.PtInRect(point)||
 		m_rtButtMax.PtInRect(point)||
@@ -398,6 +431,7 @@ void	CMP3PlayerDlg::DrawNC(CDC* pDC)
 {
 	if (pDC)
 	{
+		pDC->SetBkMode(TRANSPARENT);
 		GetWindowRect(m_rtWnd);
 		ScreenToClient(m_rtWnd);
 		m_rtWnd.OffsetRect(-m_rtWnd.left,-m_rtWnd.top);
@@ -406,42 +440,10 @@ void	CMP3PlayerDlg::DrawNC(CDC* pDC)
 		rcTitle.left = 0;//m_rtWnd.left;
 		rcTitle.top = 0;//m_rtWnd.top;
 		rcTitle.right = m_rtWnd.Width()+ 3;
-		rcTitle.bottom = rcTitle.top + m_nCaptionHeight+4 ;
-		TRACE2("m_rtWnd::left == %d,right == %d\n",m_rtWnd.left,m_rtWnd.right);
-		TRACE2("m_rtWnd::top == %d,bottom == %d\n",m_rtWnd.top,m_rtWnd.bottom);
-		//////////////////////////////////////////////////////////////////
- 		int  cx   =   GetSystemMetrics(   SM_CXSCREEN   );   
-		int  cy   =   GetSystemMetrics(   SM_CYSCREEN   );
-		TRACE2("Screen::cx == %d,cy == %d\n",cx,cy);
-
-// 		CDC	dcTmp;
-// 		dcTmp.CreateCompatibleDC(pDC);
-// 		if (m_bmpCP.GetSafeHandle())
-// 		{
-// 			CBitmap *pOldBitmap=dcTmp.SelectObject(&m_bmpCP);
-// 			BITMAP	bm;
-// 			m_bmpGK.GetBitmap(&bm);
-// 			TRACE0("*************************************************************************\n");
-// 			TRACE2("rcTitle::width == %d,height == %d\n",rcTitle.Width(),rcTitle.Height());
-// 			TRACE2("bm::width == %d,height == %d\n",bm.bmWidth,bm.bmHeight);
-// 			pDC->SetStretchBltMode(HALFTONE);
-// 			pDC->StretchBlt(
-// //				0,0,
-// 				rcTitle.left,rcTitle.top,
-// 				m_rtWnd.Width(),
-// 				rcTitle.Height(),
-// // 				400,200,
-// 				&dcTmp,
-// 				0,0,
-// 				bm.bmWidth,
-// 				bm.bmHeight,
-// 				SRCCOPY);
-// // 			pDC->BitBlt(rcTitle.left,rcTitle.top,rcTitle.Width(),rcTitle.Height(),&dcTmp,0,0,SRCCOPY);
-// 			dcTmp.SelectObject(pOldBitmap);
-// 			pOldBitmap->DeleteObject();
-// 		} 
+		rcTitle.bottom = rcTitle.top + m_nCaptionHeight+INIT_CAPTION_OFFSET ;
   		DrawTitle(pDC,rcTitle);
 		DrawBorder(pDC,m_rtWnd);
+		DrawSysMenu(pDC);
  	}
 }
 void	CMP3PlayerDlg::DrawBorder(CDC* pDC,CRect rcWnd)
@@ -450,17 +452,17 @@ void	CMP3PlayerDlg::DrawBorder(CDC* pDC,CRect rcWnd)
 	{
 		CPen	penBorder(PS_SOLID,1,RGB(100,20,50));
 		CPen*	pOldpen = pDC->SelectObject(&penBorder);
-		for (int i = 0;i<4;i++)
+		for (int i = 0;i<INIT_CAPTION_OFFSET;i++)
 		{
 			//左边框
-			pDC->MoveTo(rcWnd.left+i,rcWnd.top + 14);
+			pDC->MoveTo(rcWnd.left+i,rcWnd.top + INIT_CAPTION_HEIGHT+INIT_CAPTION_OFFSET);
 			pDC->LineTo(rcWnd.left+i,rcWnd.bottom);
 			//下边框
 			pDC->MoveTo(rcWnd.left,rcWnd.bottom-i);
 			pDC->LineTo(rcWnd.right,rcWnd.bottom-i);
 			//右边框
-			pDC->MoveTo(rcWnd.right-i,rcWnd.top + 14);
-			pDC->LineTo(rcWnd.right-i,rcWnd.bottom+14);
+			pDC->MoveTo(rcWnd.right-i,rcWnd.top + INIT_CAPTION_HEIGHT+INIT_CAPTION_OFFSET);
+			pDC->LineTo(rcWnd.right-i,rcWnd.bottom+INIT_CAPTION_HEIGHT+INIT_CAPTION_OFFSET);
 		}
 		pDC->SelectObject(pOldpen);
 	}
@@ -470,29 +472,73 @@ void	CMP3PlayerDlg::DrawTitle(CDC* pDC,CRect	rcTitle)
  		CDC	dcTmp;
 		dcTmp.CreateCompatibleDC(pDC);
 		if (m_bmpCP.GetSafeHandle())
-		{
+		{//标题栏绘制
 			CBitmap *pOldBitmap=dcTmp.SelectObject(&m_bmpCP);
 			BITMAP	bm;
-			m_bmpGK.GetBitmap(&bm);
+			m_bmpCP.GetBitmap(&bm);
 			int nOldMode = pDC->SetStretchBltMode(HALFTONE);
 			pDC->StretchBlt(
  				0,0,
-//				rcTitle.left,rcTitle.top,
 				rcTitle.Width(),
 				rcTitle.Height(),
-// 				400,200,
-				&dcTmp,
+ 				&dcTmp,
  				0,0,
 				bm.bmWidth,
 				bm.bmHeight,
 				SRCCOPY);
-////			pDC->BitBlt(rcTitle.left,rcTitle.top,rcTitle.Width(),rcTitle.Height(),&dcTmp,0,0,SRCCOPY);
-			dcTmp.SelectObject(pOldBitmap);
+ 			dcTmp.SelectObject(pOldBitmap);
 			pOldBitmap->DeleteObject();
 			pDC->SetStretchBltMode(nOldMode);
-			TRACE2("rcTitle::width == %d,height == %d\n",rcTitle.Width(),rcTitle.Height());
-			TRACE2("bm::width == %d,height == %d\n",bm.bmWidth,bm.bmHeight);
+
 		} 
+		//标题文字
+		CString	str;
+		GetWindowText(str);
+		if (!str.IsEmpty())
+		{
+			CFont*	pOld = GetFont();
+			pDC->SetTextColor(RGB(0,0,255));
+			dcTmp.SelectObject(pOld);
+			dcTmp.DrawText(str,&rcTitle,DT_SINGLELINE|DT_LEFT);
+		}
+}
+void	CMP3PlayerDlg::DrawSysMenu(CDC* pDC)
+{
+ 	DrawMenuBtn(pDC,m_rtButtMin,m_strPath+DLG_BUTTON_MIN);
+	DrawMenuBtn(pDC,m_rtButtMax,m_strPath+DLG_BUTTON_MAX);
+	DrawMenuBtn(pDC,m_rtButtExit,m_strPath+DLG_BUTTON_CLOSE);
+	DrawMenuBtn(pDC,m_rtButtMenu,m_strPath+DLG_BUTTON_MENU);
+}
+void	CMP3PlayerDlg::DrawMenuBtn(CDC* pDC,CRect rcBtn,CString strFile)
+{
+	if (!strFile.IsEmpty())
+	{
+		CDC	dcTmp;
+		dcTmp.CreateCompatibleDC(pDC);
+		CBitmap	bmp;
+		CString	strPath =strFile;
+		HBITMAP	hbit = (HBITMAP)::LoadImage(AfxGetInstanceHandle(),strPath,IMAGE_BITMAP,0,0,LR_LOADFROMFILE|LR_DEFAULTSIZE);
+		BOOL	bRet = bmp.Attach(hbit);//bmp.LoadBitmap(_T("D:\\Code_Lib\\SourceCode\\Test\\CustomControl\\Debug\\skin\\sys_dlg_min.bmp"));
+		if(!bRet)
+		{
+			DWORD	dwErr = GetLastError();
+			TRACE1("GetLastError:%d\n",dwErr);
+			return;
+		}
+		BITMAP	bm;
+		bmp.GetBitmap(&bm);
+		CBitmap*	pTmp = dcTmp.SelectObject(&bmp);
+		bRet = pDC->StretchBlt(rcBtn.left,rcBtn.top,rcBtn.Width(),rcBtn.Height(),&dcTmp,0,0,
+			bm.bmWidth/3,bm.bmHeight,SRCCOPY);
+		if(!bRet)
+		{
+			DWORD	dwErr = GetLastError();
+			TRACE1("GetLastError:%d\n",dwErr);
+		}
+		dcTmp.SelectObject(pTmp);
+		pTmp->DeleteObject();
+		bmp.Detach();
+	}
 }
 void	CMP3PlayerDlg::DrawBKBmp(CDC* pDC,CRect rcWnd)
 {
@@ -505,5 +551,10 @@ void	CMP3PlayerDlg::DrawBKBmp(CDC* pDC,CRect rcWnd)
 		CBitmap*	pOldBmp = dcTmp.SelectObject(&m_bmpGK);
 		pDC->StretchBlt(0,0,rcWnd.Width(),rcWnd.Height(),&dcTmp,
 			0,0,bmpBK.bmWidth,bmpBK.bmHeight,SRCCOPY);
+		dcTmp.SelectObject(pOldBmp);
+		pOldBmp->DeleteObject();
 	}
 }
+
+
+ 
