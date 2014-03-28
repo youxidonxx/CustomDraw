@@ -70,6 +70,11 @@ CMP3PlayerDlg::CMP3PlayerDlg(CWnd* pParent /*=NULL*/)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 	m_nCaptionHeight = INIT_CAPTION_HEIGHT;
+
+	m_bNCHovering = FALSE;
+	m_bNCTracking = FALSE;
+
+	m_nDownIndex = m_nHoverIndex = System_Menu_Null;
 // 	m_brBG = NULL;
 // 	m_bmpCP = NULL;
 // 	m_bmpGK = NULL;
@@ -106,7 +111,9 @@ BEGIN_MESSAGE_MAP(CMP3PlayerDlg, CDialogEx)
 	ON_WM_NCMOUSEMOVE()
 	ON_WM_INITMENUPOPUP()
 	ON_WM_NCHITTEST()
- END_MESSAGE_MAP()
+	ON_WM_NCMOUSELEAVE()
+	ON_WM_NCMOUSEHOVER()
+END_MESSAGE_MAP()
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -330,7 +337,10 @@ void CMP3PlayerDlg::OnNcCalcSize(BOOL bCalcValidRects, NCCALCSIZE_PARAMS* lpncsp
 void CMP3PlayerDlg::OnNcLButtonDown(UINT nHitTest, CPoint point)
 {
 	// TODO: Add your message handler code here and/or call default
-
+	CPoint	pt = point;
+	ScreenToClient(&pt);
+	pt.Offset(CSize(INIT_CAPTION_OFFSET,(m_nCaptionHeight+INIT_CAPTION_OFFSET)));
+	GetPtOfSysmenu(pt);
 	CDialogEx::OnNcLButtonDown(nHitTest, point);
 }
 
@@ -356,8 +366,44 @@ void CMP3PlayerDlg::OnNcLButtonUp(UINT nHitTest, CPoint point)
 void CMP3PlayerDlg::OnNcMouseMove(UINT nHitTest, CPoint point)
 {
 	// TODO: Add your message handler code here and/or call default
-
+	if (!m_bNCTracking)
+	{
+		CPoint	pt = point;
+		ScreenToClient(&pt);
+		pt.Offset(CSize(INIT_CAPTION_OFFSET,(m_nCaptionHeight+INIT_CAPTION_OFFSET)));
+		if (m_rtButtMax.PtInRect(pt)
+			|| m_rtButtMin.PtInRect(pt))
+		{
+			m_bNCHovering = TRUE;
+		}
+		TRACKMOUSEEVENT	tms;
+		tms.cbSize = sizeof(tms);
+		tms.hwndTrack = m_hWnd;
+		tms.dwFlags = TME_NONCLIENT;
+		tms.dwHoverTime = 1;
+		m_bNCTracking = ::_TrackMouseEvent(&tms);
+	}
 	CDialogEx::OnNcMouseMove(nHitTest, point);
+}
+void CMP3PlayerDlg::OnNcMouseLeave()
+{
+	// This feature requires Windows 2000 or greater.
+	// The symbols _WIN32_WINNT and WINVER must be >= 0x0500.
+	// TODO: Add your message handler code here and/or call default
+	m_bNCHovering = FALSE;
+	m_bNCTracking = FALSE;
+
+	// 	CDialogEx::OnNcMouseLeave();
+}
+
+
+void CMP3PlayerDlg::OnNcMouseHover(UINT nFlags, CPoint point)
+{
+	// This feature requires Windows 2000 or greater.
+	// The symbols _WIN32_WINNT and WINVER must be >= 0x0500.
+	// TODO: Add your message handler code here and/or call default
+	m_bNCHovering = TRUE;
+	// 	CDialogEx::OnNcMouseHover(nFlags, point);
 }
 
 
@@ -408,15 +454,16 @@ LRESULT CMP3PlayerDlg::OnNcHitTest(CPoint point)
 
 	CRect tst(2,2,m_nCaptionHeight+INIT_CAPTION_OFFSET,m_nCaptionHeight+INIT_CAPTION_OFFSET);
 // 	tst.OffsetRect(m_rtWnd.TopLeft());//原图标屏幕位置
-	ScreenToClient(&point);
-  	point.Offset(CSize(INIT_CAPTION_OFFSET,(m_nCaptionHeight+INIT_CAPTION_OFFSET)));
+	CPoint	pt = point;
+	ScreenToClient(&pt);
+  	pt.Offset(CSize(INIT_CAPTION_OFFSET,(m_nCaptionHeight+INIT_CAPTION_OFFSET)));
 	//x需要偏移(-4,-24)
- 	TRACE2("OnHitTest::x == %d,y == %d\n",point.x,point.y);
- 	if(tst.PtInRect(point))//最大最小关闭按钮位置.
+//  	TRACE2("OnHitTest::x == %d,y == %d\n",point.x,point.y);
+ 	if(tst.PtInRect(pt))//最大最小关闭按钮位置.
 		return HTCAPTION;
-	else if(m_rtButtMin.PtInRect(point)||
-		m_rtButtMax.PtInRect(point)||
-		m_rtButtExit.PtInRect(point))
+	else if(m_rtButtMin.PtInRect(pt)||
+		m_rtButtMax.PtInRect(pt)||
+		m_rtButtExit.PtInRect(pt))
 		return HTSYSMENU;//使此区域能够响应OnNcLButtonUp
 	else
 		return CDialog::OnNcHitTest(point);
@@ -544,8 +591,14 @@ void	CMP3PlayerDlg::DrawMenuBtn(CDC* pDC,CRect rcBtn,CString strFile)
 		BITMAP	bm;
 		bmp.GetBitmap(&bm);
 		CBitmap*	pTmp = dcTmp.SelectObject(&bmp);
-		bRet = pDC->StretchBlt(rcBtn.left,rcBtn.top,rcBtn.Width(),rcBtn.Height(),&dcTmp,0,0,
-			bm.bmWidth/3,bm.bmHeight,SRCCOPY);
+		int	nWidth = bm.bmWidth/SYSTEM_MENU_STATE_NUM;
+		int	nIndex = 3;
+		if (m_bNCHovering)
+		{
+			nIndex = 2;
+		}
+		bRet = pDC->StretchBlt(rcBtn.left,rcBtn.top,rcBtn.Width(),rcBtn.Height(),&dcTmp,nWidth*(3-nIndex),0,
+			nWidth*(4-nIndex),bm.bmHeight,SRCCOPY);
 		if(!bRet)
 		{
 			DWORD	dwErr = GetLastError();
@@ -571,6 +624,13 @@ void	CMP3PlayerDlg::DrawBKBmp(CDC* pDC,CRect rcWnd)
 		pOldBmp->DeleteObject();
 	}
 }
+void	CMP3PlayerDlg::GetPtOfSysmenu(CPoint pt)
+{
+	if (m_rtButtMax.PtInRect(pt))
+	{
+
+	}
+}
 
 
- 
+

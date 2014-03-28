@@ -38,6 +38,7 @@
 
 #define		INIT_SYSTEM_MENU_SIZE	24		//自绘的最大最小化按钮的大小
 
+#define		SYSTEM_MENU_STATE_NUM	3		//加载的最大最小化图标类型：悬浮、焦点、正常
 
 #define		BTN_MIN_ID			1001
 
@@ -49,6 +50,14 @@
 #define		DLG_BK					_T("\\dlg_bk.bmp")
 #define		DLG_TITLE				_T("\\dlg_title.bmp")
 
+enum	enumSystemMenuIndex
+{
+	System_Menu_Normal = 0
+	,System_Menu_Hover 
+	,System_Menu_Pressed
+	,System_Menu_State_Num
+
+};
 /************************************************************************/
 /* 
 */
@@ -105,6 +114,16 @@ protected:
 		,m_btnExit
 		,m_btnRes
 		;
+	//////////////////////////////////////////////////////////////////////////
+	BOOL	m_bNCTracking
+			,m_bNCHovering
+			;
+	int		m_nDownIndex		//鼠标按下时是否在systemmenu上，若是的话，记录下此时尾椎索引
+			,m_nHoverIndex		//鼠标是否悬浮在systemmenu上，若是的话，记录下此时位置索引
+			;
+	/////////////////////////////////////////////////////////////////////////////////
+protected:
+	void	GetPtOfSysmenu(CPoint	pt);
 
 	void DrawNC(CDC* pDC);	//	画非客户区 
 	void	DrawTitle(CDC*	pDC,CRect	rcTitle);
@@ -128,4 +147,6 @@ public:
 	virtual LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
 	afx_msg void OnInitMenuPopup(CMenu* pPopupMenu, UINT nIndex, BOOL bSysMenu);
 	afx_msg LRESULT OnNcHitTest(CPoint point);
- };
+	afx_msg void OnNcMouseLeave();
+	afx_msg void OnNcMouseHover(UINT nFlags, CPoint point);
+};
