@@ -52,10 +52,11 @@
 
 enum	enumSystemMenuIndex
 {
-	System_Menu_Normal = 0
-	,System_Menu_Hover 
-	,System_Menu_Pressed
-	,System_Menu_State_Num
+	System_Menu_Null = -1
+	,System_Menu_Close = 0
+	,System_Menu_Min 
+	,System_Menu_Max
+	,System_Menu_Menu
 
 };
 /************************************************************************/
