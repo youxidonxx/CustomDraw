@@ -103,6 +103,7 @@
     <ClInclude Include="CustomBtn.h" />
     <ClInclude Include="CustomControl.h" />
     <ClInclude Include="CustomControlDlg.h" />
+    <ClInclude Include="CustomListBox.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
@@ -112,6 +113,7 @@
     <ClCompile Include="CustomBtn.cpp" />
     <ClCompile Include="CustomControl.cpp" />
     <ClCompile Include="CustomControlDlg.cpp" />
+    <ClCompile Include="CustomListBox.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>

@@ -6,6 +6,8 @@
 #include "afxwin.h"
 #include "CustomBtn.h"
 #include "TestButton.h"
+#include "CustomListBox.h"
+
 // CCustomControlDlg dialog
 class CCustomControlDlg : public CDialogEx
 {
@@ -36,4 +38,5 @@ public:
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	CTestButton m_testBtn;
 	CCustomBtn m_iconBtn;
+	CCustomListBox m_list;
 };

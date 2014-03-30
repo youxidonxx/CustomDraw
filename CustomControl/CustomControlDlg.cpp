@@ -61,6 +61,7 @@ void CCustomControlDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_BUTTON2, m_btn2);
 	DDX_Control(pDX, IDC_BUTTON3, m_testBtn);
 	DDX_Control(pDX, IDC_BUTTON4, m_iconBtn);
+	DDX_Control(pDX, IDC_LIST1, m_list);
 }
 
 BEGIN_MESSAGE_MAP(CCustomControlDlg, CDialogEx)
@@ -112,6 +113,9 @@ BOOL CCustomControlDlg::OnInitDialog()
 		TRACE2("OnInitDialog::rcItem.LeftTop (%d,%d).",rcBtn.left,rcBtn.top);
 		TRACE2("OnInitDialog.RightBottom(%d,%d).",rcBtn.right,rcBtn.bottom);
 		TRACE2("OnInitDialog.Width(%d),Height(%d).\n",rcBtn.Width(),rcBtn.Height());
+
+		m_list.AddString(_T("1111"));
+		m_list.AddString(_T("2222"));
 
 // 	HBITMAP   hBitmap;   
 // 	hBitmap = LoadBitmap(AfxGetInstanceHandle(),   
