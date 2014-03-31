@@ -23,6 +23,9 @@
 				ON_WM_NCMOUSEMOVE()//鼠标悬停。
 				//屏蔽最大最小关闭消息：
 				WindowProc中屏蔽屏蔽最大最小关闭消息.
+
+	说明：关于标题栏自绘问题，有两种解决方案，一种是对标题栏进行重绘，另一种则是减除标题栏，在客户区自己绘制标题栏；
+	在此处，乃是采用对标题栏区域进行重绘的方式进行修改，
 */
 /************************************************************************/
 // MP3PlayerDlg.h : header file
@@ -41,7 +44,7 @@
 #define		SYSTEM_MENU_STATE_NUM	3		//加载的最大最小化图标类型：悬浮、焦点、正常
 
 #define		BTN_MIN_ID			1001
-
+//资源文件名称
 #define		DLG_BUTTON_CLOSE			_T("\\sys_dlg_close.bmp")
 #define		DLG_BUTTON_MIN			_T("\\sys_dlg_min.bmp")
 #define		DLG_BUTTON_MAX			_T("\\sys_dlg_max.bmp")
@@ -56,6 +59,7 @@ enum	enumSystemMenuIndex
 	,System_Menu_Close = 0
 	,System_Menu_Min 
 	,System_Menu_Max
+	,System_Menu_Res = System_Menu_Max
 	,System_Menu_Menu
 
 };
@@ -77,11 +81,11 @@ public:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
 
 public:
+	//interface
 	void	SetCaptionHeight(UINT	nHeight){	m_nCaptionHeight = nHeight>0?nHeight:INIT_CAPTION_HEIGHT;	}
 	//若是有设置，则说明需要设置背景图片；若是标题路径为无，则表示标题部分不用另外贴图，采用一体背景图
 	void	SetBkImage(const	CString&	strFileBK,const	CString&	strFileCaption);	
 	void	SetBkImage(UINT	nResID_BK,UINT	nResID_CP = 0);	
-	void	SetSysMenu();
 // Implementation
 protected:
 	HICON m_hIcon;
@@ -124,14 +128,16 @@ protected:
 			;
 	/////////////////////////////////////////////////////////////////////////////////
 protected:
-	void	GetPtOfSysmenu(CPoint	pt);
+	void	SetSysMenu();		//设置几个大小
+	//nQueryState:想要查询的状态，0:无状态；1：悬浮状态；2：点击按下状态
+	void	GetPtOfSysmenu(CPoint	pt,int	nQueryState = 0);
 
 	void DrawNC(CDC* pDC);	//	画非客户区 
 	void	DrawTitle(CDC*	pDC,CRect	rcTitle);
 	void	DrawBorder(CDC*	pDC,CRect	rcWnd);
 	void	DrawBKBmp(CDC*	pDC,CRect	rcWnd);
 	void	DrawSysMenu(CDC*	pDC);
-	void	DrawMenuBtn(CDC*	pDC,CRect	rcBtn,CString	strFile);
+	void	DrawMenuBtn(CDC*	pDC,CRect	rcBtn,CString	strFile,UINT	nMenuIndex);
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);

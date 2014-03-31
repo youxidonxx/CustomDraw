@@ -122,9 +122,9 @@ END_MESSAGE_MAP()
 	 CRect	rcDlg;
 	 rcDlg = m_rtWnd;
 	 CRect	rcBtn;
-	 rcBtn.left=  rcDlg.right - INIT_SYSTEM_MENU_SIZE -INIT_CAPTION_OFFSET;
+	 rcBtn.left=  rcDlg.right - INIT_SYSTEM_MENU_SIZE/3*5 -INIT_CAPTION_OFFSET;
 	 rcBtn.top =  rcDlg.top +INIT_CAPTION_OFFSET/2;
-	 rcBtn.right = rcBtn.left + INIT_SYSTEM_MENU_SIZE;
+	 rcBtn.right = rcBtn.left + INIT_SYSTEM_MENU_SIZE/3*5;
 	 rcBtn.bottom = rcBtn.top+m_nCaptionHeight;
  	 m_rtButtExit = rcBtn;
 
@@ -235,7 +235,6 @@ BOOL CMP3PlayerDlg::OnInitDialog()
 		str +=_T("\\skin");
 		SetBkImage(str+DLG_BK,str+DLG_TITLE);
 		m_strPath = str;
-		SetSysMenu();
 	}
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -340,7 +339,8 @@ void CMP3PlayerDlg::OnNcLButtonDown(UINT nHitTest, CPoint point)
 	CPoint	pt = point;
 	ScreenToClient(&pt);
 	pt.Offset(CSize(INIT_CAPTION_OFFSET,(m_nCaptionHeight+INIT_CAPTION_OFFSET)));
-	GetPtOfSysmenu(pt);
+	GetPtOfSysmenu(pt,2);
+	TRACE2("OnNcLButtonDown::Pressed state:%d,Hover state:%d\n",m_nDownIndex,m_nHoverIndex);
 	CDialogEx::OnNcLButtonDown(nHitTest, point);
 }
 
@@ -348,16 +348,19 @@ void CMP3PlayerDlg::OnNcLButtonDown(UINT nHitTest, CPoint point)
 void CMP3PlayerDlg::OnNcLButtonUp(UINT nHitTest, CPoint point)
 {
 	// TODO: Add your message handler code here and/or call default
-	if (m_rtButtExit.PtInRect(point))
+	CPoint	pt = point;
+	ScreenToClient(&pt);
+	pt.Offset(CSize(INIT_CAPTION_OFFSET,(m_nCaptionHeight+INIT_CAPTION_OFFSET)));
+	if (m_rtButtExit.PtInRect(pt))
 		SendMessage(WM_CLOSE);
-	else if (m_rtButtMin.PtInRect(point))
-		SendMessage(WM_SYSCOMMAND, SC_MINIMIZE, MAKELPARAM(point.x, point.y) );
-	else if (m_rtButtMax.PtInRect(point))
+	else if (m_rtButtMin.PtInRect(pt))
+		SendMessage(WM_SYSCOMMAND, SC_MINIMIZE, MAKELPARAM(pt.x, pt.y) );
+	else if (m_rtButtMax.PtInRect(pt))
 	{
 		if (IsZoomed())
-			SendMessage(WM_SYSCOMMAND, SC_RESTORE, MAKELPARAM(point.x, point.y));
+			SendMessage(WM_SYSCOMMAND, SC_RESTORE, MAKELPARAM(pt.x, pt.y));
 		else
-			SendMessage(WM_SYSCOMMAND, SC_MAXIMIZE, MAKELPARAM(point.x, point.y) );
+			SendMessage(WM_SYSCOMMAND, SC_MAXIMIZE, MAKELPARAM(pt.x, pt.y) );
 	}
 // 	CDialogEx::OnNcLButtonUp(nHitTest, point);
 }
@@ -366,22 +369,31 @@ void CMP3PlayerDlg::OnNcLButtonUp(UINT nHitTest, CPoint point)
 void CMP3PlayerDlg::OnNcMouseMove(UINT nHitTest, CPoint point)
 {
 	// TODO: Add your message handler code here and/or call default
-	if (!m_bNCTracking)
+// 	if (!m_bNCTracking)	//若是保留，则影响在标题栏内移动的触发消息
 	{
 		CPoint	pt = point;
 		ScreenToClient(&pt);
 		pt.Offset(CSize(INIT_CAPTION_OFFSET,(m_nCaptionHeight+INIT_CAPTION_OFFSET)));
 		if (m_rtButtMax.PtInRect(pt)
-			|| m_rtButtMin.PtInRect(pt))
+			|| m_rtButtMin.PtInRect(pt)
+			||m_rtButtMenu.PtInRect(pt)
+			|| m_rtButtExit.PtInRect(pt))
 		{
 			m_bNCHovering = TRUE;
 		}
+		GetPtOfSysmenu(pt,1);
+		TRACE2("OnNcMouseMove::Pressed state:%d,Hover state:%d\n",m_nDownIndex,m_nHoverIndex);
 		TRACKMOUSEEVENT	tms;
 		tms.cbSize = sizeof(tms);
 		tms.hwndTrack = m_hWnd;
-		tms.dwFlags = TME_NONCLIENT;
+		tms.dwFlags = TME_NONCLIENT|TME_HOVER|TME_LEAVE;
 		tms.dwHoverTime = 1;
 		m_bNCTracking = ::_TrackMouseEvent(&tms);
+
+		//只更新系统按钮
+		CDC* pWinDC=GetWindowDC();
+		if (pWinDC) DrawSysMenu(pWinDC);
+		ReleaseDC(pWinDC);
 	}
 	CDialogEx::OnNcMouseMove(nHitTest, point);
 }
@@ -392,6 +404,12 @@ void CMP3PlayerDlg::OnNcMouseLeave()
 	// TODO: Add your message handler code here and/or call default
 	m_bNCHovering = FALSE;
 	m_bNCTracking = FALSE;
+	CPoint	pt ;
+	GetCursorPos(&pt);
+	ScreenToClient(&pt);
+	GetPtOfSysmenu(pt,1);
+	TRACE2("OnNcMouseLeave::Pressed state:%d,Hover state:%d\n",m_nDownIndex,m_nHoverIndex);
+	TRACE0("OnNcMouseLeave::m_bNCHovering = FALSE;\n");
 
 	// 	CDialogEx::OnNcMouseLeave();
 }
@@ -403,7 +421,12 @@ void CMP3PlayerDlg::OnNcMouseHover(UINT nFlags, CPoint point)
 	// The symbols _WIN32_WINNT and WINVER must be >= 0x0500.
 	// TODO: Add your message handler code here and/or call default
 	m_bNCHovering = TRUE;
-	// 	CDialogEx::OnNcMouseHover(nFlags, point);
+	CPoint	pt =point;
+   	ScreenToClient(&pt);
+	GetPtOfSysmenu(pt,1);
+	TRACE2("OnNcMouseHover::Pressed state:%d,Hover state:%d\n",m_nDownIndex,m_nHoverIndex);
+	TRACE0("OnNcMouseHover::m_bNCHovering = TRUE;\n");
+// 	 	CDialogEx::OnNcMouseHover(nFlags, point);
 }
 
 
@@ -478,6 +501,7 @@ void	CMP3PlayerDlg::DrawNC(CDC* pDC)
 {
 	if (pDC)
 	{
+		SetSysMenu();	//最大化与恢复时，可将系统按钮移位
 		pDC->SetBkMode(TRANSPARENT);
 		GetWindowRect(m_rtWnd);
 		ScreenToClient(m_rtWnd);
@@ -567,12 +591,17 @@ void	CMP3PlayerDlg::DrawTitle(CDC* pDC,CRect	rcTitle)
 }
 void	CMP3PlayerDlg::DrawSysMenu(CDC* pDC)
 {
- 	DrawMenuBtn(pDC,m_rtButtMin,m_strPath+DLG_BUTTON_MIN);
-	DrawMenuBtn(pDC,m_rtButtMax,m_strPath+DLG_BUTTON_MAX);
-	DrawMenuBtn(pDC,m_rtButtExit,m_strPath+DLG_BUTTON_CLOSE);
-	DrawMenuBtn(pDC,m_rtButtMenu,m_strPath+DLG_BUTTON_MENU);
+	DrawMenuBtn(pDC,m_rtButtExit,m_strPath+DLG_BUTTON_CLOSE,System_Menu_Close);
+ 	DrawMenuBtn(pDC,m_rtButtMin,m_strPath+DLG_BUTTON_MIN,System_Menu_Min );
+	if(!IsZoomed())
+		DrawMenuBtn(pDC,m_rtButtMax,m_strPath+DLG_BUTTON_MAX,System_Menu_Max);
+	else
+	{
+		DrawMenuBtn(pDC,m_rtButtMax,m_strPath+DLG_BUTTON_RES,System_Menu_Res);
+	}
+	DrawMenuBtn(pDC,m_rtButtMenu,m_strPath+DLG_BUTTON_MENU,System_Menu_Menu);
 }
-void	CMP3PlayerDlg::DrawMenuBtn(CDC* pDC,CRect rcBtn,CString strFile)
+void	CMP3PlayerDlg::DrawMenuBtn(CDC* pDC,CRect rcBtn,CString strFile,UINT	nMenuIndex)
 {
 	if (!strFile.IsEmpty())
 	{
@@ -581,7 +610,7 @@ void	CMP3PlayerDlg::DrawMenuBtn(CDC* pDC,CRect rcBtn,CString strFile)
 		CBitmap	bmp;
 		CString	strPath =strFile;
 		HBITMAP	hbit = (HBITMAP)::LoadImage(AfxGetInstanceHandle(),strPath,IMAGE_BITMAP,0,0,LR_LOADFROMFILE|LR_DEFAULTSIZE);
-		BOOL	bRet = bmp.Attach(hbit);//bmp.LoadBitmap(_T("D:\\Code_Lib\\SourceCode\\Test\\CustomControl\\Debug\\skin\\sys_dlg_min.bmp"));
+		BOOL	bRet = bmp.Attach(hbit); 
 		if(!bRet)
 		{
 			DWORD	dwErr = GetLastError();
@@ -592,13 +621,18 @@ void	CMP3PlayerDlg::DrawMenuBtn(CDC* pDC,CRect rcBtn,CString strFile)
 		bmp.GetBitmap(&bm);
 		CBitmap*	pTmp = dcTmp.SelectObject(&bmp);
 		int	nWidth = bm.bmWidth/SYSTEM_MENU_STATE_NUM;
-		int	nIndex = 3;
-		if (m_bNCHovering)
+		int	nIndex = 1;
+		if (m_nDownIndex==nMenuIndex && m_nHoverIndex==nMenuIndex)//按钮按下
 		{
 			nIndex = 2;
 		}
+		else if (m_nHoverIndex==nMenuIndex && m_bNCHovering)	//悬浮
+		{
+			nIndex =3;
+		}
+		TRACE1("DrawMenuBtn::%d\n",nIndex);
 		bRet = pDC->StretchBlt(rcBtn.left,rcBtn.top,rcBtn.Width(),rcBtn.Height(),&dcTmp,nWidth*(3-nIndex),0,
-			nWidth*(4-nIndex),bm.bmHeight,SRCCOPY);
+			nWidth,bm.bmHeight,SRCCOPY);
 		if(!bRet)
 		{
 			DWORD	dwErr = GetLastError();
@@ -624,11 +658,57 @@ void	CMP3PlayerDlg::DrawBKBmp(CDC* pDC,CRect rcWnd)
 		pOldBmp->DeleteObject();
 	}
 }
-void	CMP3PlayerDlg::GetPtOfSysmenu(CPoint pt)
+void	CMP3PlayerDlg::GetPtOfSysmenu(CPoint pt,int	nQueryState /*= 0*/)
 {
-	if (m_rtButtMax.PtInRect(pt))
+	if(nQueryState == 1)	//hover
 	{
-
+		if (m_rtButtExit.PtInRect(pt))
+		{
+			m_nHoverIndex = System_Menu_Close;
+			InvalidateRect(m_rtButtExit);
+		}
+		else if (m_rtButtMin.PtInRect(pt))
+		{
+			m_nHoverIndex = System_Menu_Min;
+			InvalidateRect(m_rtButtMin);
+		}
+		else if (m_rtButtMax.PtInRect(pt))
+		{
+			m_nHoverIndex = System_Menu_Max;
+			InvalidateRect(m_rtButtMax);
+		}
+		else if (m_rtButtMenu.PtInRect(pt))
+		{
+			m_nHoverIndex = System_Menu_Menu;
+			InvalidateRect(m_rtButtMenu);
+		}
+		else
+			m_nHoverIndex = System_Menu_Null;
+ 	}
+	else if (nQueryState == 2)
+	{
+		if (m_rtButtExit.PtInRect(pt))
+		{
+			m_nDownIndex = System_Menu_Close;
+			InvalidateRect(m_rtButtExit);
+		}
+		else if (m_rtButtMin.PtInRect(pt))
+		{
+			m_nDownIndex = System_Menu_Min;
+			InvalidateRect(m_rtButtMin);
+		}
+		else if (m_rtButtMax.PtInRect(pt))
+		{
+			m_nDownIndex = System_Menu_Max;
+			InvalidateRect(m_rtButtMax);
+		}
+		else if (m_rtButtMenu.PtInRect(pt))
+		{
+			m_nDownIndex = System_Menu_Menu;
+			InvalidateRect(m_rtButtMenu);
+		}
+		else
+			m_nDownIndex = System_Menu_Null;
 	}
 }
 
