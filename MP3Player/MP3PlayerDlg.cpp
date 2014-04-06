@@ -349,7 +349,7 @@ void CMP3PlayerDlg::OnNcLButtonDown(UINT nHitTest, CPoint point)
 	TRACE2("OnNcLButtonDown::Pressed state:%d,Hover state:%d\n",m_nDownIndex,m_nHoverIndex);
  	if (m_nHitTest == HTLEFT)
 	{
-		SetCursor(LoadCursor(NULL,MAKEINTRESOURCE(IDC_SIZENS)));
+		SetCursor(LoadCursor(NULL,MAKEINTRESOURCE(IDC_SIZEWE)));
 		SendMessage( WM_SYSCOMMAND, SC_SIZE | WMSZ_LEFT, MAKELPARAM(point.x, point.y)); 
 	}
 	CDialogEx::OnNcLButtonDown(nHitTest, point);
@@ -775,10 +775,17 @@ void CMP3PlayerDlg::OnMouseMove(UINT nFlags, CPoint point)
 		SetCursor(LoadCursor(NULL,MAKEINTRESOURCE(IDC_SIZEWE)));
 		m_nHitTest = HTLEFT;
 	}
+	//right
 	else if (point.x < rect.right && point.x > rect.right - INIT_CAPTION_OFFSET)
 	{
 		SetCursor(LoadCursor(NULL,MAKEINTRESOURCE(IDC_SIZEWE)));
 		m_nHitTest = HTRIGHT;
+	}
+	//bottom
+	else if (point.y < rect.bottom && point.y > rect.bottom - INIT_CAPTION_OFFSET)
+	{
+		SetCursor(LoadCursor(NULL,MAKEINTRESOURCE(IDC_SIZENS)));
+		m_nHitTest = HTBOTTOM;
 	}
 	else
 	{
@@ -793,7 +800,7 @@ void CMP3PlayerDlg::OnLButtonDown(UINT nFlags, CPoint point)
 	// TODO: Add your message handler code here and/or call default
 	if (m_nHitTest == HTLEFT)
 	{
-		SetCursor(LoadCursor(NULL,MAKEINTRESOURCE(IDC_SIZENS)));
+		SetCursor(LoadCursor(NULL,MAKEINTRESOURCE(IDC_SIZEWE)));
 		SendMessage(WM_SYSCOMMAND,SC_SIZE|WMSZ_LEFT,MAKELPARAM(point.x,point.y));
 	}
 	else if (m_nHitTest == HTBOTTOM)
@@ -803,7 +810,7 @@ void CMP3PlayerDlg::OnLButtonDown(UINT nFlags, CPoint point)
 	}
 	else if (m_nHitTest == HTRIGHT)
 	{
-		SetCursor(LoadCursor(NULL,MAKEINTRESOURCE(IDC_SIZENS)));
+		SetCursor(LoadCursor(NULL,MAKEINTRESOURCE(IDC_SIZEWE)));
 		SendMessage(WM_SYSCOMMAND,SC_SIZE|WMSZ_RIGHT,MAKELPARAM(point.x,point.y));
 	}
 	else if (m_nHitTest ==	HTBOTTOMLEFT)
