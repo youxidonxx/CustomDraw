@@ -75,6 +75,8 @@ CMP3PlayerDlg::CMP3PlayerDlg(CWnd* pParent /*=NULL*/)
 	m_bNCTracking = FALSE;
 
 	m_nDownIndex = m_nHoverIndex = System_Menu_Null;
+
+	m_nHitTest = 0;
 // 	m_brBG = NULL;
 // 	m_bmpCP = NULL;
 // 	m_bmpGK = NULL;
@@ -113,6 +115,10 @@ BEGIN_MESSAGE_MAP(CMP3PlayerDlg, CDialogEx)
 	ON_WM_NCHITTEST()
 	ON_WM_NCMOUSELEAVE()
 	ON_WM_NCMOUSEHOVER()
+	ON_WM_ERASEBKGND()
+	ON_WM_CTLCOLOR()
+	ON_WM_MOUSEMOVE()
+	ON_WM_LBUTTONDOWN()
 END_MESSAGE_MAP()
 
 
@@ -341,6 +347,11 @@ void CMP3PlayerDlg::OnNcLButtonDown(UINT nHitTest, CPoint point)
 	pt.Offset(CSize(INIT_CAPTION_OFFSET,(m_nCaptionHeight+INIT_CAPTION_OFFSET)));
 	GetPtOfSysmenu(pt,2);
 	TRACE2("OnNcLButtonDown::Pressed state:%d,Hover state:%d\n",m_nDownIndex,m_nHoverIndex);
+ 	if (m_nHitTest == HTLEFT)
+	{
+		SetCursor(LoadCursor(NULL,MAKEINTRESOURCE(IDC_SIZENS)));
+		SendMessage( WM_SYSCOMMAND, SC_SIZE | WMSZ_LEFT, MAKELPARAM(point.x, point.y)); 
+	}
 	CDialogEx::OnNcLButtonDown(nHitTest, point);
 }
 
@@ -394,6 +405,17 @@ void CMP3PlayerDlg::OnNcMouseMove(UINT nHitTest, CPoint point)
 		CDC* pWinDC=GetWindowDC();
 		if (pWinDC) DrawSysMenu(pWinDC);
 		ReleaseDC(pWinDC);
+	}
+	//拉伸边框时，判断落点是否在拉伸作用域内，进而改变鼠标手势
+	CRect	rect;
+	GetWindowRect(&rect);
+	if (point.x <rect.left+INIT_CAPTION_OFFSET)
+	{
+		SetCursor(LoadCursor(NULL,MAKEINTRESOURCE(IDC_SIZEWE)));
+		m_nHitTest = HTLEFT;
+	}
+	else if (point.x)
+	{
 	}
 	CDialogEx::OnNcMouseMove(nHitTest, point);
 }
@@ -630,7 +652,7 @@ void	CMP3PlayerDlg::DrawMenuBtn(CDC* pDC,CRect rcBtn,CString strFile,UINT	nMenuI
 		{
 			nIndex =3;
 		}
-		TRACE1("DrawMenuBtn::%d\n",nIndex);
+// 		TRACE1("DrawMenuBtn::%d\n",nIndex);
 		bRet = pDC->StretchBlt(rcBtn.left,rcBtn.top,rcBtn.Width(),rcBtn.Height(),&dcTmp,nWidth*(3-nIndex),0,
 			nWidth,bm.bmHeight,SRCCOPY);
 		if(!bRet)
@@ -654,6 +676,7 @@ void	CMP3PlayerDlg::DrawBKBmp(CDC* pDC,CRect rcWnd)
 		CBitmap*	pOldBmp = dcTmp.SelectObject(&m_bmpGK);
 		pDC->StretchBlt(0,0,rcWnd.Width(),rcWnd.Height(),&dcTmp,
 			0,0,bmpBK.bmWidth,bmpBK.bmHeight,SRCCOPY);
+		TRACE2("OnPaint::width == %d,height == %d\n",rcWnd.Width(),rcWnd.Height());
 		dcTmp.SelectObject(pOldBmp);
 		pOldBmp->DeleteObject();
 	}
@@ -714,3 +737,81 @@ void	CMP3PlayerDlg::GetPtOfSysmenu(CPoint pt,int	nQueryState /*= 0*/)
 
 
 
+
+
+BOOL CMP3PlayerDlg::OnEraseBkgnd(CDC* pDC)
+{
+	// TODO: Add your message handler code here and/or call default
+	return false;
+	return CDialogEx::OnEraseBkgnd(pDC);
+}
+
+
+HBRUSH CMP3PlayerDlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
+{
+	HBRUSH hbr = CDialogEx::OnCtlColor(pDC, pWnd, nCtlColor);
+
+	// TODO:  Change any attributes of the DC here
+
+	// TODO:  Return a different brush if the default is not desired
+	if (m_bmpGK.GetSafeHandle())
+	{
+		m_brBG.Detach();
+		m_brBG.CreatePatternBrush(&m_bmpGK);
+		return (HBRUSH)m_brBG;
+	}
+	return hbr;
+}
+
+
+void CMP3PlayerDlg::OnMouseMove(UINT nFlags, CPoint point)
+{
+	// TODO: Add your message handler code here and/or call default
+	CRect	rect;
+	GetClientRect(&rect);
+	//在客户区，只有左、左下、下、右下、右这5个方向
+	if(point.x < rect.left+INIT_CAPTION_OFFSET)
+	{
+		SetCursor(LoadCursor(NULL,MAKEINTRESOURCE(IDC_SIZEWE)));
+		m_nHitTest = HTLEFT;
+	}
+	else if (point.x < rect.right && point.x > rect.right - INIT_CAPTION_OFFSET)
+	{
+		SetCursor(LoadCursor(NULL,MAKEINTRESOURCE(IDC_SIZEWE)));
+		m_nHitTest = HTRIGHT;
+	}
+	else
+	{
+		m_nHitTest == 0;
+	}
+	CDialogEx::OnMouseMove(nFlags, point);
+}
+
+
+void CMP3PlayerDlg::OnLButtonDown(UINT nFlags, CPoint point)
+{
+	// TODO: Add your message handler code here and/or call default
+	if (m_nHitTest == HTLEFT)
+	{
+		SetCursor(LoadCursor(NULL,MAKEINTRESOURCE(IDC_SIZENS)));
+		SendMessage(WM_SYSCOMMAND,SC_SIZE|WMSZ_LEFT,MAKELPARAM(point.x,point.y));
+	}
+	else if (m_nHitTest == HTBOTTOM)
+	{
+		SetCursor(LoadCursor(NULL,MAKEINTRESOURCE(IDC_SIZENS)));
+		SendMessage(WM_SYSCOMMAND,SC_SIZE|WMSZ_BOTTOM,MAKELPARAM(point.x,point.y));
+	}
+	else if (m_nHitTest == HTRIGHT)
+	{
+		SetCursor(LoadCursor(NULL,MAKEINTRESOURCE(IDC_SIZENS)));
+		SendMessage(WM_SYSCOMMAND,SC_SIZE|WMSZ_RIGHT,MAKELPARAM(point.x,point.y));
+	}
+	else if (m_nHitTest ==	HTBOTTOMLEFT)
+	{
+	}
+	else if (m_nHitTest == HTBOTTOMRIGHT)
+	{
+	}
+	InvalidateRect(m_rtWnd);
+	CDialogEx::OnLButtonDown(nFlags, point);
+}

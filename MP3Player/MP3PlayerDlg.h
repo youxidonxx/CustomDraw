@@ -6,6 +6,7 @@
 	完整：http://bbs.csdn.net/topics/390634398
 	其他参考：	http://blog.csdn.net/x_q_wang/article/details/21607835
 				http://blog.csdn.net/u010105970/article/details/20901907
+				http://blog.csdn.net/yuzhenxiong0823/article/details/8215326		自绘情况下，鼠标处于拉伸框内的处理
 	一、完整模式：
 		1、非标题栏客户区自绘
 			1.1、先取出标题栏，并实现标题栏与显示区分离效果
@@ -97,9 +98,11 @@ protected:
 		,m_bmpCP			//标题栏
 		,m_bmpMenu
 		;
-
+// 	CBrush	m_brushBK;
 	UINT	m_nCaptionHeight		//标题栏高度	——相应的，也有函数进行设置
 		;
+
+	UINT	m_nHitTest;
 //////////////////////////////////////////////////////////////////////////
 	//按钮区域设置
 	CRect m_rtButtons;//最大,最小,关闭按钮.
@@ -156,4 +159,8 @@ public:
 	afx_msg LRESULT OnNcHitTest(CPoint point);
 	afx_msg void OnNcMouseLeave();
 	afx_msg void OnNcMouseHover(UINT nFlags, CPoint point);
+	afx_msg BOOL OnEraseBkgnd(CDC* pDC);
+	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
+	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 };
